@@ -1,6 +1,6 @@
 import datetime
 import time
-from back_end.src.units.verifyEmail import is_valid_email 
+from ..units import verifyEmail
 
 class User(object):
     __collection__ =  'user'
@@ -19,7 +19,7 @@ class User(object):
         return self.__email
     
     def set_email(self, email):
-        if(is_valid_email(email)):
+        if(verifyEmail.is_valid_email(email)):
             self.__email = email
         else:
             raise ValueError('invaild email format: %s' %email)

@@ -1,5 +1,8 @@
 from flask import Flask, jsonify, render_template, request
 import random, hashlib
+from src.objects.User import User
+import time
+from src.apis.signupApi import SignUp 
 
 app = Flask(__name__, 
             template_folder="./front_end/react_front_end/build",
@@ -7,9 +10,10 @@ app = Flask(__name__,
             static_url_path="/")
 
 # 生成MD5
-def genearteMD5(str):
+def genearteMD5(timeStamp):
+    timeStampStr = str(timeStamp)
     hl = hashlib.md5()
-    hl.update(str.encode(encoding='utf-8'))
+    hl.update(timeStampStr.encode(encoding='utf-8'))
     return hl.hexdigest()
 
 @app.route('/')
@@ -22,19 +26,30 @@ def signup():
         try:
             username = request.json['username']
             userPwdFromClient = request.json['userpassword']
-            userRegisteredDate = request.json['registeredDate']
         except KeyError as ke:
             return jsonify({
                 "error" : "Pls input email and password!"
             })
-        salt = '-'.join(random.sample('zyxwvutsrqponmlkjihgfedcba',5))
-        userPwdMd5 = genearteMD5(salt.join(userPwdFromClient))
+        userRegisteredDate = int(time.time())
+        strTimeStamp = str(userRegisteredDate)
+        # 用timeStamp和客户端传过来的密码（也是email和password的加密码）再次编码
+        userPwdMd5 = genearteMD5(strTimeStamp.join(userPwdFromClient))
+        # 创建User instance
+        register = User(username, userPwdMd5, userRegisteredDate)
+        # 创建注册对象
+        registerProxcy = SignUp(register)
         
-        return jsonify({
-            "username": username,
-            "userpassword": userPwdMd5,
-            "userSalt": salt
-        })
+        registerFlag = registerProxcy.signup()
+
+        if registerFlag == None:
+             return jsonify({
+                "validation error" : "This emali has already been registered!"
+            })    
+        else:
+             return jsonify({
+                "message" : str(registerFlag)
+            })   
+        
 
 @app.route('/api/hello')
 def api():
